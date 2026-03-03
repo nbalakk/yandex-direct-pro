@@ -715,8 +715,8 @@
 </div>
 <div class="footer">
     Разработано специально для подготовки к сертификации.<br>
-    Идеи по улучшению тренажера: tg @nbalakk.<br>
-    © 2026 v.1.10
+    Свои идеи по улучшению тренажера пишите в tg.<br>
+    Тренажёр PRO by @nbalakk © 2026 v.1.10
 </div>
 
 <!-- Подключаем базы вопросов из внешних файлов -->
@@ -1076,7 +1076,7 @@
                 statusEl.innerText = "❌ Нет ответа";
                 statusEl.className = "question-status status-unanswered";
             } else {
-                statusEl.innerText = state.isCorrect ? "✅ Верно" : "❌ Ошибка";
+                statusEl.innerText = state.isCorrect ? "✅ Верно" : "❌ Неверный ответ";
                 statusEl.className = "question-status " + (state.isCorrect ? "status-correct" : "status-incorrect");
             }
         } else {
@@ -1457,3 +1457,4 @@
 </script>
 </body>
 </html>
+
