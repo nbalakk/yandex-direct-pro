@@ -7,7 +7,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=YS+Text:wght@400;500;700&display=swap');
         
+        /* --- ЦВЕТОВЫЕ ТЕМЫ --- */
         :root {
+            /* Темная тема (по умолчанию) */
             --bg-body-dark: #111112;
             --bg-card-dark: #1C1C1E;
             --text-main-dark: #FFFFFF;
@@ -27,6 +29,7 @@
             --btn-secondary-hover-dark: #3A3A3C;
             --grid-unanswered-dark: #4A4A4C;
             
+            /* Светлая тема */
             --bg-body-light: #F0F0F2;
             --bg-card-light: #FFFFFF;
             --text-main-light: #000000;
@@ -46,6 +49,7 @@
             --btn-secondary-hover-light: #E5E5EA;
             --grid-unanswered-light: #D1D1D6;
 
+            /* Применение переменных (по умолчанию темная) */
             --bg-body: var(--bg-body-dark);
             --bg-card: var(--bg-card-dark);
             --text-main: var(--text-main-dark);
@@ -66,6 +70,7 @@
             --grid-unanswered: var(--grid-unanswered-dark);
         }
 
+        /* Класс для светлой темы */
         body.theme-light {
             --bg-body: var(--bg-body-light);
             --bg-card: var(--bg-card-light);
@@ -115,10 +120,12 @@
             transition: background-color 0.3s, border-color 0.3s;
         }
         
+        /* Специфичная тень для темной темы */
         body:not(.theme-light) .container {
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
+        /* --- HEADER --- */
         .header {
             display: flex;
             justify-content: space-between;
@@ -150,6 +157,7 @@
             margin: 0 10px;
         }
 
+        /* --- СЕЛЕКТОР --- */
         .quiz-selector {
             background: var(--bg-card);
             color: var(--text-main);
@@ -173,11 +181,15 @@
             background-size: 10px auto;
             padding-right: 30px;
         }
+        body.theme-light .quiz-selector {
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        }
         .quiz-selector:hover, .quiz-selector:focus {
             border-color: var(--text-muted);
             background-color: var(--option-bg);
         }
         
+        /* --- ВЫПАДАЮЩЕЕ МЕНЮ --- */
         .dropdown {
             position: relative;
             display: inline-block;
@@ -256,6 +268,7 @@
             color: var(--yandex-yellow);
         }
 
+        /* --- КНОПКИ ВЕРХНЕЙ ПАНЕЛИ --- */
         .header-right { 
             display: flex; 
             gap: 10px; 
@@ -291,6 +304,7 @@
             font-size: 1.2em;
         }
 
+        /* --- ТУМБЛЕР ТЕМЫ --- */
         .theme-switch-wrapper {
             display: flex;
             align-items: center;
@@ -340,6 +354,7 @@
             color: var(--text-muted);
         }
 
+        /* --- РЕЖИМЫ (Тренажер / Экзамен) --- */
         .mode-selector {
             display: flex;
             gap: 10px;
@@ -370,6 +385,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
+        /* --- ЭКРАН НАСТРОЙКИ ЭКЗАМЕНА --- */
         #exam-setup {
             display: none;
             flex-direction: column;
@@ -428,6 +444,7 @@
             font-size: 1.2em;
         }
 
+        /* --- ИНФО ПАНЕЛЬ ЭКЗАМЕНА --- */
         .exam-info-bar {
             display: none;
             justify-content: space-between;
@@ -497,6 +514,7 @@
         .grid-item:hover:not(.active) { background: var(--option-hover); }
         .grid-item.active { border: 2px solid var(--yandex-yellow); background: var(--yandex-yellow); color: #000; transform: scale(1.1); font-weight: 700; }
         
+        /* Цвета сетки в тренажере и просмотре ошибок */
         .mode-training .grid-item.answered-correct,
         .mode-review .grid-item.answered-correct { background: var(--correct-border); color: #000; border-color: var(--correct-border); }
         
@@ -535,6 +553,8 @@
         .mode-training .option.wrong-answer,
         .mode-review .option.wrong-answer { background: var(--error-bg); border-color: var(--error-border); }
         
+        /* ИСПРАВЛЕННЫЙ СТИЛЬ: Подсветка правильного ответа, если пользователь ответил неверно в любом режиме, где показаны ответы */
+        .mode-training .option.missed-correct,
         .mode-review .option.missed-correct { border-color: var(--correct-border); background: var(--correct-bg); box-shadow: 0 0 10px rgba(50, 205, 50, 0.2); }
         
         .option input { margin-right: 15px; transform: scale(1.3); cursor: pointer; accent-color: var(--yandex-yellow);}
@@ -573,7 +593,7 @@
             font-size: 1.1em;
             min-width: 250px;
             max-width: 400px;
-            height: 60px; /* Фиксированная высота для выравнивания */
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -617,9 +637,9 @@
                     Полезные материалы <span style="font-size: 0.8em;">▼</span>
                 </button>
                 <div class="dropdown-content" id="linksDropdown">
-                    <a href="https://yandex.ru/adv/edu/online/direct-prodvinutyy" target="_blank">📄 Инструкция по подготовке</a>
-                    <a href="https://yandex.ru/support/direct/ru/" target="_blank">📚 Дополнительные материалы</a>
-                    <a href="https://t.me/nbalakk" target="_blank">💬 Связь со мной / Telegram</a>
+                    <a href="https://yandex.ru/adv/edu/online/direct-prodvinutyy" target="_blank"><span class="icon">📄</span> Инструкция по подготовке</a>
+                    <a href="https://yandex.ru/support/direct/ru/" target="_blank"><span class="icon">📚</span> Дополнительные материалы</a>
+                    <a href="https://t.me/nbalakk" target="_blank"><span class="icon">💬</span> Связь со мной / Telegram</a>
                 </div>
             </div>
         </div>
@@ -696,13 +716,16 @@
 <div class="footer">
     Разработано специально для подготовки к сертификации.<br>
     Идеи по улучшению тренажера: tg @nbalakk.<br>
-    © 2026 v.1.9
+    © 2026 v.1.10
 </div>
 
+<!-- Подключаем базы вопросов из внешних файлов -->
+<!-- Убедитесь, что файлы data/direct.js и data/metrica.js существуют и содержат переменные db_direct_base и db_metrica_base соответственно -->
 <script src="data/direct.js"></script>
 <script src="data/metrica.js"></script>
 		 
 <script>
+    // --- ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ---
     function toggleTheme() {
         const isLight = document.getElementById('theme-toggle').checked;
         if (isLight) {
@@ -714,6 +737,7 @@
         }
     }
 
+    // Восстановление темы при загрузке
     document.addEventListener('DOMContentLoaded', () => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'light') {
@@ -722,6 +746,7 @@
         }
     });
 
+    // --- ПРЕДУПРЕЖДЕНИЕ ПРИ ЗАКРЫТИИ/ОБНОВЛЕНИИ СТРАНИЦЫ ---
     let hasUnsavedChanges = false;
     window.addEventListener('beforeunload', function (e) {
         if (hasUnsavedChanges || currentMode === 'exam_active') {
@@ -734,6 +759,7 @@
     function markAsChanged() { hasUnsavedChanges = true; }
     function markAsSaved() { hasUnsavedChanges = false; }
 
+    // Меню
     function toggleMenu(event) {
         event.stopPropagation();
         document.getElementById("linksDropdown").classList.toggle("show");
@@ -747,6 +773,8 @@
         }
     }
 
+    // Базы данных вопросов: теперь они подключаются из внешних JS-файлов
+    // db_direct_base и db_metrica_base должны быть определены в data/direct.js и data/metrica.js
     const quizDatabases = {
         direct: db_direct_base,
         metrica: db_metrica_base
@@ -757,11 +785,13 @@
     let questions =[];
     let currentQuestion = 0;
     
+    // Режимы: 'training', 'exam_setup', 'exam_active', 'exam_finished', 'exam_review'
     let currentMode = 'training';
     let selectedExamType = null; 
     let examTimerInterval = null;
     let examTimeLeft = 0; 
     
+    // Хранилище прогресса только для тренажера
     let progressStore = {
         direct: { userAnswers: {}, isFinished: false },
         metrica: { userAnswers: {}, isFinished: false }
@@ -775,11 +805,13 @@
         let currentIndex = array.length, randomIndex;
         while (currentIndex !== 0) {
             randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex--;[array[currentIndex], array[randomIndex]] =[array[randomIndex], array[currentIndex]];
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
         }
         return array;
     }
 
+    // Инициализация вопросов. count - кол-во вопросов для экзамена. Если null - берем все.
     function initQuestions(count = null) {
         let indices = Array.from({length: db_questions.length}, (_, i) => i);
         indices = shuffleArray(indices);
@@ -798,12 +830,14 @@
         setMode('training');
     }
 
+    // Обновление цифр на карточках экзамена в зависимости от текущей базы
     function updateExamCardNumbers() {
         const total = db_questions.length;
         document.getElementById('fast-q-count').innerText = Math.min(20, total);
         document.getElementById('full-q-count').innerText = Math.min(60, total);
     }
 
+    // --- УПРАВЛЕНИЕ РЕЖИМАМИ ---
     function setMode(mode) {
         if (currentMode === 'exam_active' && mode !== 'exam_active' && mode !== 'exam_finished') {
             if (!confirm("У вас активен экзамен. При переключении режима он будет прерван и результаты не сохранятся. Продолжить?")) {
@@ -814,7 +848,7 @@
 
         currentMode = mode;
         const body = document.body;
-
+        // Сохраняем класс темы, убираем классы режимов
         const isLight = body.classList.contains('theme-light');
         body.className = isLight ? 'theme-light' : '';
 
@@ -834,6 +868,7 @@
             document.getElementById('btn-mode-training').classList.add('active');
             document.getElementById('main-title').innerText = "Тренажер";
             
+            // Загружаем прогресс тренажера
             userAnswers = progressStore[currentQuizType].userAnswers || {};
             isFinished = progressStore[currentQuizType].isFinished || false;
             
@@ -852,13 +887,15 @@
                 renderQuestion();
             }
         } else if (mode === 'exam') {
+            // Переход в настройку экзамена
             document.getElementById('btn-mode-exam').classList.add('active');
             document.getElementById('main-title').innerText = "Экзамен";
             document.getElementById('exam-setup').style.display = 'flex';
-            document.getElementById('header-controls').style.display = 'none'; 
+            document.getElementById('header-controls').style.display = 'none'; // Скрываем сохранения
             
             updateExamCardNumbers();
 
+            // Сброс выбора
             selectedExamType = null;
             document.querySelectorAll('.exam-card').forEach(el => el.classList.remove('selected'));
             document.getElementById('btn-start-exam').disabled = true;
@@ -878,7 +915,7 @@
             document.getElementById('main-title').innerText = "Просмотр ошибок";
             document.getElementById('quiz-selector').disabled = true;
             document.getElementById('mode-selector').style.display = 'flex';
-            document.getElementById('btn-mode-exam').classList.add('active'); 
+            document.getElementById('btn-mode-exam').classList.add('active'); // Оставляем активной кнопку экзамена
             document.getElementById('header-controls').style.display = 'none';
             document.getElementById('quiz-container').style.display = 'grid';
             
@@ -889,6 +926,7 @@
         }
     }
 
+    // --- ЛОГИКА ЭКЗАМЕНА ---
     function selectExamType(type) {
         selectedExamType = type;
         document.querySelectorAll('.exam-card').forEach(el => el.classList.remove('selected'));
@@ -976,6 +1014,7 @@
         }
     }
 
+    // --- ОТРИСОВКА ---
     function renderGrid() {
         const grid = document.getElementById('question-grid');
         grid.innerHTML = '';
@@ -1136,7 +1175,7 @@
             } else {
                 if (currentQuestion === questions.length - 1) {
                     btnAction.innerText = 'Завершить тест';
-                    btnAction.className = 'btn-finish';
+                    btnAction.className = 'btn-primary'; // Изменил на btn-primary для единообразия
                     btnAction.disabled = false;
                 } else {
                     btnAction.innerText = 'Далее ➔';
@@ -1150,7 +1189,7 @@
             
             if (currentQuestion === questions.length - 1) {
                 btnAction.innerText = 'Завершить экзамен';
-                btnAction.className = 'btn-finish';
+                // btnAction.className = 'btn-finish'; // Удален, так как btn-finish не определен в CSS
                 const allAnswered = questions.every(q => userAnswers[q.id] && userAnswers[q.id].selected && userAnswers[q.id].selected.length > 0);
                 if (!allAnswered) {
                     btnAction.innerText = 'Завершить (есть пропуски)';
@@ -1349,7 +1388,13 @@
         questions.forEach((q) => {
             const state = userAnswers[q.id];
             if (state && state.checked) {
-                if (state.selected && state.selected.length > 0) checkedCount++; 
+                // В экзамене считаем "отвеченным", если что-то выбрано
+                if (currentMode === 'exam_finished' && state.selected && state.selected.length > 0) {
+                    checkedCount++; 
+                } else if (currentMode === 'training') { // В тренажере считаем, если проверено
+                    checkedCount++;
+                }
+
                 if (state.usedHint) hintCount++;
                 if (state.isCorrect && !state.usedHint) score++;
             }
@@ -1412,5 +1457,3 @@
 </script>
 </body>
 </html>
-
-
