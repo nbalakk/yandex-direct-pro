@@ -534,7 +534,7 @@
     const quizDatabases = { direct: db_direct_base, metrica: db_metrica_base };
     let currentQuizType = 'direct';
     let db_questions = quizDatabases[currentQuizType];
-    let questions = [];
+    let questions =[];
     let currentQuestion = 0;
     let currentMode = 'training';
     let selectedExamType = null; 
@@ -546,7 +546,7 @@
     };
     let userAnswers = {};
     let isFinished = false;
-    let currentShuffledOptions = [];
+    let currentShuffledOptions =[];
 
     function shuffleArray(array) {
         let cur = array.length, random;
@@ -650,7 +650,7 @@
                 }
             } else if (currentMode === 'exam_active' && state?.selected?.length) div.classList.add('answered');
             div.innerText = idx + 1;
-            div.onclick = () => { currentQuestion = idx; currentShuffledOptions = []; renderQuestion(); };
+            div.onclick = () => { currentQuestion = idx; currentShuffledOptions =[]; renderQuestion(); };
             grid.appendChild(div);
         });
         const activeItem = grid.querySelector('.active');
@@ -715,18 +715,21 @@
 
         // --- ЛОГИКА СПРАВОЧНИКА ---
         const helpPlaceholder = document.getElementById('help-placeholder');
-        helpPlaceholder.innerHTML = '';
-        if (currentMode !== 'exam_active') {
-            const helpLink = document.createElement('a');
-            helpLink.className = 'question-help-link';
-            helpLink.innerHTML = 'ⓘ Справочная информация';
-            if (qData.ref && qData.ref.trim() !== "") {
-                helpLink.href = qData.ref;
-                helpLink.target = "_blank";
-            } else {
-                helpLink.onclick = () => alert("Упс... Не нашли информацию, но можете найти и написать в tg: @nbalakk :)");
+        if (helpPlaceholder) {
+            helpPlaceholder.innerHTML = '';
+            if (currentMode !== 'exam_active') {
+                const helpLink = document.createElement('a');
+                helpLink.className = 'question-help-link';
+                helpLink.innerHTML = 'ⓘ Справочная информация';
+                if (qData.ref && qData.ref.trim() !== "") {
+                    helpLink.href = qData.ref;
+                    helpLink.target = "_blank";
+                } else {
+                    helpLink.href = "javascript:void(0)";
+                    helpLink.onclick = () => alert("Упс... Не нашли информацию, но можете найти и написать в tg: @nbalakk :)");
+                }
+                helpPlaceholder.appendChild(helpLink);
             }
-            helpPlaceholder.appendChild(helpLink);
         }
 
         updateButtons(state);
@@ -760,7 +763,7 @@
 
     function useHint() {
         const qData = questions[currentQuestion];
-        userAnswers[qData.id] = { selected: [...qData.c], checked: true, isCorrect: false, usedHint: true, savedOrder: userAnswers[qData.id].savedOrder };
+        userAnswers[qData.id] = { selected:[...qData.c], checked: true, isCorrect: false, usedHint: true, savedOrder: userAnswers[qData.id].savedOrder };
         renderQuestion();
     }
 
