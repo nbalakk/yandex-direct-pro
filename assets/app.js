@@ -261,6 +261,46 @@
         el('stats-bar').style.display = mode === 'exam_active' ? 'none' : 'flex';
     }
 
+    /** Скриншот к вопросу: кликом открывается в полноэкранном просмотре. */
+    function renderImage(question) {
+        var box = el('question-image');
+        box.innerHTML = '';
+        if (!question.img) {
+            box.hidden = true;
+            return;
+        }
+        box.hidden = false;
+
+        var image = document.createElement('img');
+        image.src = question.img;
+        image.alt = question.alt || 'Скриншот к вопросу';
+        image.onclick = function () { openLightbox(image.src, image.alt); };
+
+        var caption = document.createElement('figcaption');
+        caption.textContent = 'Нажмите на скриншот, чтобы увеличить';
+
+        box.appendChild(image);
+        box.appendChild(caption);
+    }
+
+    function openLightbox(src, alt) {
+        var overlay = el('lightbox');
+        var image = el('lightbox-image');
+        image.src = src;
+        image.alt = alt;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        el('lightbox-close').focus();
+    }
+
+    function closeLightbox() {
+        var overlay = el('lightbox');
+        if (overlay.hidden) return;
+        overlay.hidden = true;
+        el('lightbox-image').src = '';
+        document.body.style.overflow = '';
+    }
+
     function renderOptions(question, answer, revealed) {
         var container = el('options-container');
         container.innerHTML = '';
@@ -315,7 +355,7 @@
     function renderQuestion() {
         var questions = activeQuestions();
         if (!questions.length) {
-            el('quiz-container').style.display = 'none';
+            el('quiz-container').hidden = true;
             renderStats();
             return;
         }
@@ -357,6 +397,7 @@
             }
         }
 
+        renderImage(question);
         renderOptions(question, answer, revealed);
 
         var noteBox = el('note-box');
@@ -446,13 +487,14 @@
             clearInterval(examTimer);
         }
 
+        closeLightbox();
         mode = next;
         var isLight = document.body.classList.contains('theme-light');
         document.body.className = isLight ? 'theme-light' : '';
 
         el('btn-mode-training').classList.remove('active');
         el('btn-mode-exam').classList.remove('active');
-        el('quiz-container').style.display = 'none';
+        el('quiz-container').hidden = true;
         el('results-container').style.display = 'none';
         el('exam-setup').style.display = 'none';
         el('exam-info-bar').style.display = 'none';
@@ -473,7 +515,7 @@
             if (run().finished) {
                 showResults();
             } else {
-                el('quiz-container').style.display = 'grid';
+                el('quiz-container').hidden = false;
                 renderQuestion();
             }
         } else if (mode === 'exam_setup') {
@@ -498,7 +540,7 @@
             el('mode-selector').style.display = 'none';
             el('header-controls').style.display = 'none';
             el('exam-info-bar').style.display = 'flex';
-            el('quiz-container').style.display = 'grid';
+            el('quiz-container').hidden = false;
             renderQuestion();
         } else if (mode === 'exam_review') {
             document.body.classList.add('mode-review');
@@ -506,7 +548,7 @@
             el('quiz-selector').disabled = true;
             el('btn-mode-exam').classList.add('active');
             el('header-controls').style.display = 'none';
-            el('quiz-container').style.display = 'grid';
+            el('quiz-container').hidden = false;
             run().current = 0;
             renderQuestion();
         }
@@ -628,7 +670,7 @@
             finishExam();
         } else if (mode === 'exam_review') {
             if (isLast) {
-                el('quiz-container').style.display = 'none';
+                el('quiz-container').hidden = true;
                 el('results-container').style.display = 'block';
             } else {
                 goTo(run().current + 1);
@@ -687,7 +729,7 @@
 
     function showResults() {
         var container = el('results-container');
-        el('quiz-container').style.display = 'none';
+        el('quiz-container').hidden = true;
         el('exam-info-bar').style.display = 'none';
         el('training-toolbar').style.display = 'none';
         el('stats-bar').style.display = 'none';
@@ -884,10 +926,17 @@
     }
 
     function onKeyDown(event) {
+        if (!el('lightbox').hidden) {
+            if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                closeLightbox();
+                event.preventDefault();
+            }
+            return;
+        }
         var tag = (event.target.tagName || '').toLowerCase();
         if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
         if (event.ctrlKey || event.metaKey || event.altKey) return;
-        if (el('quiz-container').style.display === 'none') return;
+        if (el('quiz-container').hidden) return;
 
         if (event.key >= '1' && event.key <= '9') {
             var index = Number(event.key) - 1;
@@ -982,6 +1031,10 @@
             if (mode === 'training') setMode('training');
             else if (mode === 'exam_setup') updateExamCounts();
         };
+
+        el('lightbox').onclick = closeLightbox;
+        el('lightbox-close').onclick = closeLightbox;
+        el('lightbox-image').onclick = function (event) { event.stopPropagation(); };
 
         document.addEventListener('keydown', onKeyDown);
 
