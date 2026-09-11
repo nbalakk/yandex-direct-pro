@@ -60,6 +60,13 @@
     var examTimer = null;
     var examTimeLeft = 0;
     var searchQuery = '';
+    var gridExpanded = false;     // на узком экране список вопросов свёрнут
+
+    var MOBILE_WIDTH = 850;
+
+    function isMobile() {
+        return document.documentElement.clientWidth <= MOBILE_WIDTH;
+    }
 
     function el(id) { return document.getElementById(id); }
 
@@ -244,9 +251,37 @@
             item.className = classes.join(' ');
             item.textContent = String(index + 1);
             item.title = question.q;
-            item.onclick = function () { goTo(index); };
+            item.onclick = function () {
+                if (isMobile()) setGridExpanded(false);
+                goTo(index, true);
+            };
             grid.appendChild(item);
         });
+        updateGridToggle(questions.length);
+    }
+
+    /** Кнопка «все вопросы» — на узком экране заменяет постоянно видимый список. */
+    function updateGridToggle(total) {
+        var toggle = el('btn-grid-toggle');
+        toggle.textContent = gridExpanded
+            ? '✕ Скрыть список вопросов'
+            : '☰ Все вопросы (' + (run().current + 1) + ' / ' + total + ')';
+        toggle.setAttribute('aria-expanded', gridExpanded ? 'true' : 'false');
+        el('quiz-container').classList.toggle('grid-collapsed', !gridExpanded);
+    }
+
+    function setGridExpanded(value) {
+        gridExpanded = value;
+        updateGridToggle(activeQuestions().length);
+    }
+
+    /** На телефоне после перехода возвращаем экран к началу вопроса. */
+    function scrollToQuestion() {
+        if (!isMobile()) return;
+        var anchor = el('question-title');
+        if (!anchor) return;
+        var top = anchor.getBoundingClientRect().top + window.pageYOffset - 12;
+        window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
     }
 
     function renderStats() {
@@ -258,7 +293,7 @@
         el('stat-correct').textContent = data.correct;
         el('stat-incorrect').textContent = data.incorrect;
         el('stat-hint').textContent = data.hint;
-        el('stats-bar').style.display = mode === 'exam_active' ? 'none' : 'flex';
+        el('stats-bar').hidden = mode === 'exam_active';
     }
 
     /** Скриншот к вопросу: кликом открывается в полноэкранном просмотре. */
@@ -418,7 +453,12 @@
         if (mode !== 'exam_active') {
             var link = document.createElement('a');
             link.className = 'btn-ref';
-            link.textContent = '📚 Справка';
+            link.setAttribute('aria-label', 'Справка');
+            link.appendChild(document.createTextNode('📚'));
+            var linkLabel = document.createElement('span');
+            linkLabel.className = 'btn-label';
+            linkLabel.textContent = ' Справка';
+            link.appendChild(linkLabel);
             if (question.ref) {
                 link.href = question.ref;
                 link.target = '_blank';
@@ -441,7 +481,7 @@
         el('btn-prev').style.visibility = run().current === 0 ? 'hidden' : 'visible';
 
         var hint = el('btn-hint');
-        hint.style.display = (mode === 'training' && !revealed) ? 'inline-flex' : 'none';
+        hint.hidden = !(mode === 'training' && !revealed);
 
         var action = el('btn-action');
         action.style.background = '';
@@ -479,6 +519,21 @@
 
     // --------------------------------------------------------------- переключение
 
+    /**
+     * Предупреждение при уходе со страницы вешаем только на время экзамена:
+     * в тренажере прогресс и так сохраняется сам.
+     */
+    function onBeforeUnload(event) {
+        var message = 'Активный экзамен будет прерван, результаты не сохранятся.';
+        event.returnValue = message;
+        return message;
+    }
+
+    function setExamGuard(active) {
+        if (active) window.addEventListener('beforeunload', onBeforeUnload);
+        else window.removeEventListener('beforeunload', onBeforeUnload);
+    }
+
     function setMode(next) {
         if (mode === 'exam_active' && next !== 'exam_active' && next !== 'exam_finished') {
             if (!confirm('У вас активен экзамен. При переключении режима он будет прерван и результаты не сохранятся. Продолжить?')) {
@@ -489,28 +544,29 @@
 
         closeLightbox();
         mode = next;
+        setExamGuard(mode === 'exam_active');
         var isLight = document.body.classList.contains('theme-light');
         document.body.className = isLight ? 'theme-light' : '';
 
         el('btn-mode-training').classList.remove('active');
         el('btn-mode-exam').classList.remove('active');
         el('quiz-container').hidden = true;
-        el('results-container').style.display = 'none';
-        el('exam-setup').style.display = 'none';
-        el('exam-info-bar').style.display = 'none';
-        el('header-controls').style.display = 'flex';
-        el('mode-selector').style.display = 'flex';
-        el('training-toolbar').style.display = 'none';
-        el('stats-bar').style.display = 'none';
+        el('results-container').hidden = true;
+        el('exam-setup').hidden = true;
+        el('exam-info-bar').hidden = true;
+        el('header-controls').hidden = false;
+        el('mode-selector').hidden = false;
+        el('training-toolbar').hidden = true;
+        el('stats-bar').hidden = true;
         el('quiz-selector').disabled = false;
-        el('question-search').style.display = '';
-        el('btn-restart').style.display = '';
+        el('question-search').hidden = false;
+        el('btn-restart').hidden = false;
 
         if (mode === 'training') {
             document.body.classList.add('mode-training');
             el('btn-mode-training').classList.add('active');
             el('main-title').textContent = 'Тренажер';
-            el('training-toolbar').style.display = 'flex';
+            el('training-toolbar').hidden = false;
             syncTrainingRun();
             if (run().finished) {
                 showResults();
@@ -521,12 +577,12 @@
         } else if (mode === 'exam_setup') {
             el('btn-mode-exam').classList.add('active');
             el('main-title').textContent = 'Экзамен';
-            el('exam-setup').style.display = 'flex';
-            el('header-controls').style.display = 'none';
+            el('exam-setup').hidden = false;
+            el('header-controls').hidden = true;
             // из фильтров в экзамене осмысленен только выбор пула вопросов
-            el('training-toolbar').style.display = 'flex';
-            el('question-search').style.display = 'none';
-            el('btn-restart').style.display = 'none';
+            el('training-toolbar').hidden = false;
+            el('question-search').hidden = true;
+            el('btn-restart').hidden = true;
             updateExamCounts();
             examType = null;
             document.querySelectorAll('.exam-card').forEach(function (card) {
@@ -537,9 +593,9 @@
             document.body.classList.add('mode-exam');
             el('main-title').textContent = 'Экзамен';
             el('quiz-selector').disabled = true;
-            el('mode-selector').style.display = 'none';
-            el('header-controls').style.display = 'none';
-            el('exam-info-bar').style.display = 'flex';
+            el('mode-selector').hidden = true;
+            el('header-controls').hidden = true;
+            el('exam-info-bar').hidden = false;
             el('quiz-container').hidden = false;
             renderQuestion();
         } else if (mode === 'exam_review') {
@@ -547,7 +603,7 @@
             el('main-title').textContent = 'Просмотр ошибок';
             el('quiz-selector').disabled = true;
             el('btn-mode-exam').classList.add('active');
-            el('header-controls').style.display = 'none';
+            el('header-controls').hidden = true;
             el('quiz-container').hidden = false;
             run().current = 0;
             renderQuestion();
@@ -560,10 +616,11 @@
         el('full-q-count').textContent = Math.min(EXAM_PRESETS.full.count, total);
     }
 
-    function goTo(index) {
+    function goTo(index, scroll) {
         run().current = index;
         renderQuestion();
         saveProgress();
+        if (scroll !== false) scrollToQuestion();
     }
 
     // ------------------------------------------------------------------- экзамен
@@ -611,6 +668,7 @@
             answer.checked = true;
         });
         mode = 'exam_finished';
+        setExamGuard(false);
         run().finished = true;
         showResults();
     }
@@ -671,7 +729,7 @@
         } else if (mode === 'exam_review') {
             if (isLast) {
                 el('quiz-container').hidden = true;
-                el('results-container').style.display = 'block';
+                el('results-container').hidden = false;
             } else {
                 goTo(run().current + 1);
             }
@@ -730,10 +788,10 @@
     function showResults() {
         var container = el('results-container');
         el('quiz-container').hidden = true;
-        el('exam-info-bar').style.display = 'none';
-        el('training-toolbar').style.display = 'none';
-        el('stats-bar').style.display = 'none';
-        container.style.display = 'block';
+        el('exam-info-bar').hidden = true;
+        el('training-toolbar').hidden = true;
+        el('stats-bar').hidden = true;
+        container.hidden = false;
         container.innerHTML = '';
 
         var data = stats();
@@ -958,6 +1016,45 @@
         }
     }
 
+    /**
+     * Свайп влево/вправо переключает вопрос. Жест считается горизонтальным,
+     * только если сдвиг по X заметно больше вертикального — иначе это обычная
+     * прокрутка страницы.
+     */
+    function bindSwipe() {
+        var startX = 0;
+        var startY = 0;
+        var tracking = false;
+        var container = el('quiz-container');
+
+        container.addEventListener('touchstart', function (event) {
+            if (event.touches.length !== 1 || !el('lightbox').hidden) {
+                tracking = false;
+                return;
+            }
+            if (event.target.closest('#question-image, #question-grid, input, a, button')) {
+                tracking = false;
+                return;
+            }
+            tracking = true;
+            startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
+        }, { passive: true });
+
+        container.addEventListener('touchend', function (event) {
+            if (!tracking || !event.changedTouches.length) return;
+            tracking = false;
+            var dx = event.changedTouches[0].clientX - startX;
+            var dy = event.changedTouches[0].clientY - startY;
+            if (Math.abs(dx) < 70 || Math.abs(dy) > 45 || Math.abs(dx) < Math.abs(dy) * 2) {
+                return;
+            }
+            var last = activeQuestions().length - 1;
+            if (dx < 0 && run().current < last) goTo(run().current + 1);
+            if (dx > 0 && run().current > 0) goTo(run().current - 1);
+        }, { passive: true });
+    }
+
     function bind() {
         el('theme-toggle').onchange = function () {
             settings.theme = this.checked ? 'light' : 'dark';
@@ -1032,23 +1129,25 @@
             else if (mode === 'exam_setup') updateExamCounts();
         };
 
+        el('btn-grid-toggle').onclick = function () {
+            setGridExpanded(!gridExpanded);
+            if (gridExpanded) {
+                el('question-grid').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        };
+
+        bindSwipe();
+
         el('lightbox').onclick = closeLightbox;
         el('lightbox-close').onclick = closeLightbox;
         el('lightbox-image').onclick = function (event) { event.stopPropagation(); };
 
         document.addEventListener('keydown', onKeyDown);
 
-        window.addEventListener('beforeunload', function (event) {
-            if (mode !== 'exam_active') return;
-            var message = 'Активный экзамен будет прерван, результаты не сохранятся.';
-            event.returnValue = message;
-            return message;
-        });
     }
 
     function updateVerifiedFilterVisibility() {
-        el('verified-filter-wrap').style.display =
-            QUIZZES[quizKey].hasUnverified ? 'inline-flex' : 'none';
+        el('verified-filter-wrap').hidden = !QUIZZES[quizKey].hasUnverified;
     }
 
     function init() {

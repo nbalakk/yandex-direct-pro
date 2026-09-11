@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тренажер | PRO</title>
     <meta name="description" content="Тренажер для подготовки к сертификации Яндекс Директ (профессиональный уровень) и Яндекс Метрика.">
+    <meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F0F0F2" media="(prefers-color-scheme: light)">
+    <meta name="mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body class="mode-training">
@@ -20,8 +23,8 @@
             </select>
 
             <div class="dropdown">
-                <button class="btn-menu" id="btn-menu" type="button">
-                    Полезные материалы <span style="font-size: 0.8em;">▼</span>
+                <button class="btn-menu" id="btn-menu" type="button" aria-label="Полезные материалы">
+                    <span class="btn-label">Полезные материалы </span>📚<span class="menu-caret"> ▼</span>
                 </button>
                 <div class="dropdown-content" id="linksDropdown">
                     <a href="https://yandex.ru/adv/edu/online/direct-prodvinutyy" target="_blank" rel="noopener"><span class="icon">📄</span> Инструкция по подготовке</a>
@@ -52,14 +55,14 @@
         <button class="mode-btn" id="btn-mode-exam" type="button">Экзамен</button>
     </div>
 
-    <div class="exam-info-bar" id="exam-info-bar">
+    <div class="exam-info-bar" id="exam-info-bar" hidden>
         <div id="exam-info-text" style="font-weight: 500;">Экзамен: Быстрый</div>
         <div class="timer" id="exam-timer">⏱ 20:00</div>
-        <button class="btn-secondary" id="btn-force-finish" type="button"
-                style="border-color: var(--error-border); color: var(--error-border);">Завершить досрочно</button>
+        <button class="btn-secondary btn-force-finish" id="btn-force-finish" type="button"
+                aria-label="Завершить экзамен досрочно">⏹<span class="btn-label"> Завершить досрочно</span></button>
     </div>
 
-    <div id="exam-setup">
+    <div id="exam-setup" hidden>
         <h2>Выберите тип экзамена</h2>
         <p style="color: var(--text-muted); text-align: center; max-width: 600px;">
             В режиме экзамена вы не будете видеть правильные ответы и подсказки до завершения теста.
@@ -87,12 +90,12 @@
             <input type="checkbox" id="verified-only" checked>
             Только сверенные ответы
         </label>
-        <button class="btn-secondary" id="btn-restart" type="button">Сбросить прогресс</button>
+        <button class="btn-secondary" id="btn-restart" type="button" aria-label="Сбросить прогресс">↺<span class="btn-label"> Сбросить прогресс</span></button>
     </div>
 
     <div class="stats-bar" id="stats-bar">
         <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-        <span class="stats-chip muted">Пройдено <b id="stat-done">0</b> / <b id="stat-total">0</b></span>
+        <span class="stats-chip muted"><span class="btn-label">Пройдено </span><b id="stat-done">0</b> / <b id="stat-total">0</b></span>
         <span class="stats-chip correct">✅ <b id="stat-correct">0</b></span>
         <span class="stats-chip incorrect">❌ <b id="stat-incorrect">0</b></span>
         <span class="stats-chip hint">💡 <b id="stat-hint">0</b></span>
@@ -111,21 +114,23 @@
 
         <div class="controls">
             <div class="controls-left">
-                <button id="btn-prev" class="btn-secondary" type="button">← Назад</button>
-                <button id="btn-hint" class="btn-hint" type="button">💡 Подсказка</button>
+                <button id="btn-prev" class="btn-secondary" type="button" aria-label="Предыдущий вопрос">←<span class="btn-label"> Назад</span></button>
+                <button id="btn-hint" class="btn-hint" type="button" aria-label="Подсказка">💡<span class="btn-label"> Подсказка</span></button>
                 <div id="help-placeholder" style="display: contents;"></div>
             </div>
             <div class="controls-right">
                 <button id="btn-action" class="btn-primary" type="button"></button>
             </div>
         </div>
+        <button class="btn-secondary btn-grid-toggle" id="btn-grid-toggle" type="button" aria-expanded="false" aria-controls="question-grid"></button>
+        <p class="swipe-hint">Свайп влево или вправо — следующий и предыдущий вопрос</p>
         <div class="hotkey-hint" id="hotkey-hint">
             <kbd>1</kbd>…<kbd>9</kbd> — выбрать вариант · <kbd>Enter</kbd> — проверить / далее ·
             <kbd>←</kbd> <kbd>→</kbd> — навигация · <kbd>H</kbd> — подсказка
         </div>
     </div>
 
-    <div id="results-container" style="display:none;"></div>
+    <div id="results-container" hidden></div>
 </div>
 <div class="lightbox" id="lightbox" hidden>
     <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Закрыть">✕</button>
@@ -135,7 +140,7 @@
 <div class="footer">
     Разработано специально для подготовки к сертификации.<br>
     Идеи по улучшению тренажера: tg <a href="https://t.me/nbalakk" target="_blank" rel="noopener">@nbalakk</a>.<br>
-    © 2026 v.2.0
+    © 2026 v.2.1
 </div>
 
 <!-- Базы вопросов -->
