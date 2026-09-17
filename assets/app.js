@@ -24,7 +24,10 @@
     var STORAGE_PROGRESS = 'ydp:progress:v2';
     var STORAGE_SETTINGS = 'ydp:settings:v2';
 
-    /** Вопрос считается сверенным, если явно не помечен как несверенный. */
+    /**
+     * v: 2 — ответ совпал в двух источниках, 1 — подтверждён одним,
+     * 0 — вопрос из старой базы без подтверждения.
+     */
     function isVerified(question) {
         return question.v !== 0;
     }
@@ -410,8 +413,8 @@
         if (!isVerified(question)) {
             var badge = document.createElement('span');
             badge.className = 'badge-unverified';
-            badge.textContent = 'не сверено';
-            badge.title = 'Вопрос из старой базы: ответ не подтверждён официальным файлом ответов';
+            badge.textContent = 'без источника';
+            badge.title = 'Вопрос из старой базы: ответ не подтверждён ни одним источником';
             textEl.appendChild(badge);
         }
 
@@ -440,7 +443,7 @@
         if (revealed && question.note) {
             var noteTitle = document.createElement('span');
             noteTitle.className = 'note-title';
-            noteTitle.textContent = 'Пояснение';
+            noteTitle.textContent = 'Разбор';
             noteBox.appendChild(noteTitle);
             noteBox.appendChild(document.createTextNode(question.note));
             noteBox.hidden = false;
