@@ -58,7 +58,8 @@
     var progress = {};            // quizKey -> { answers, order, current, finished }
     var examState = null;         // отдельное прохождение экзамена, прогресс тренажера не трогает
     var quizKey = 'direct';
-    var mode = 'training';        // training | exam_setup | exam_active | exam_finished | exam_review
+    // training | exam_setup | exam_active | exam_finished | exam_review | cheat
+    var mode = 'training';
     var examType = null;
     var examTimer = null;
     var examTimeLeft = 0;
@@ -520,6 +521,287 @@
         }
     }
 
+    // ------------------------------------------------------------- шпаргалка
+
+    var CHEAT_PAGE = 40;          // сколько карточек показываем за раз
+    var cheatShown = CHEAT_PAGE;
+    var cheatQuery = '';
+
+    /** Для поиска: ё = е, регистр не важен, знаки препинания не мешают. */
+    function searchable(value) {
+        return String(value).toLowerCase().replace(/ё/g, 'е').replace(/ /g, ' ');
+    }
+
+    var QUIZ_TITLES = { direct: 'Яндекс Директ', metrica: 'Яндекс Метрика' };
+
+    /** Сколько вопросов другого теста подходят под запрос. */
+    function countIn(key, query) {
+        var words = searchable(query).split(/\s+/).filter(Boolean);
+        if (!words.length) return 0;
+        return QUIZZES[key].data.filter(function (question) {
+            var idx = searchIndex(question);
+            var hay = idx.q + ' ' + idx.o + ' ' + idx.note;
+            return words.every(function (word) { return hay.indexOf(word) !== -1; });
+        }).length;
+    }
+
+    /** Ленивый индекс: текст вопроса отдельно от вариантов и разбора. */
+    function searchIndex(question) {
+        if (!question._idx) {
+            question._idx = {
+                q: searchable(question.q),
+                o: searchable(question.o.join('  ')),
+                note: searchable((question.note || '') + ' ' + (question.ref || ''))
+            };
+        }
+        return question._idx;
+    }
+
+    /**
+     * Находит вопросы, где встречаются все слова запроса. Совпадение в тексте
+     * вопроса весит больше, чем в вариантах ответа или разборе.
+     */
+    function cheatSearch(query) {
+        var words = searchable(query).split(/\s+/).filter(Boolean);
+        var all = QUIZZES[quizKey].data;
+        if (!words.length) {
+            return all.map(function (question) { return { question: question, score: 0 }; });
+        }
+        var found = [];
+        all.forEach(function (question) {
+            var idx = searchIndex(question);
+            var score = 0;
+            for (var i = 0; i < words.length; i++) {
+                var word = words[i];
+                var inQ = idx.q.indexOf(word) !== -1;
+                var inO = idx.o.indexOf(word) !== -1;
+                var inNote = idx.note.indexOf(word) !== -1;
+                if (!inQ && !inO && !inNote) return;      // слово не найдено — вопрос мимо
+                score += inQ ? 10 : (inO ? 4 : 1);
+                // отдельное слово ценнее куска слова
+                if (new RegExp('(^|[^\\wа-я])' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .test(idx.q)) {
+                    score += 3;
+                }
+            }
+            // подтверждённый ответ показываем выше
+            score += (question.v || 0) * 3;
+            found.push({ question: question, score: score });
+        });
+        found.sort(function (a, b) {
+            return b.score - a.score || a.question.q.length - b.question.q.length;
+        });
+        return found;
+    }
+
+    /** Текст с подсветкой найденных слов — собираем узлами, без innerHTML. */
+    function highlight(text, words) {
+        var box = document.createDocumentFragment();
+        if (!words.length) {
+            box.appendChild(document.createTextNode(text));
+            return box;
+        }
+        var hay = searchable(text);
+        var marks = [];
+        words.forEach(function (word) {
+            var from = 0;
+            while (true) {
+                var at = hay.indexOf(word, from);
+                if (at === -1) break;
+                marks.push([at, at + word.length]);
+                from = at + word.length;
+            }
+        });
+        if (!marks.length) {
+            box.appendChild(document.createTextNode(text));
+            return box;
+        }
+        marks.sort(function (a, b) { return a[0] - b[0]; });
+        var merged = [marks[0]];
+        marks.slice(1).forEach(function (range) {
+            var last = merged[merged.length - 1];
+            if (range[0] <= last[1]) last[1] = Math.max(last[1], range[1]);
+            else merged.push(range);
+        });
+        var pos = 0;
+        merged.forEach(function (range) {
+            if (range[0] > pos) {
+                box.appendChild(document.createTextNode(text.slice(pos, range[0])));
+            }
+            var mark = document.createElement('mark');
+            mark.textContent = text.slice(range[0], range[1]);
+            box.appendChild(mark);
+            pos = range[1];
+        });
+        if (pos < text.length) box.appendChild(document.createTextNode(text.slice(pos)));
+        return box;
+    }
+
+    function cheatCard(question, words) {
+        var card = document.createElement('article');
+        card.className = 'cheat-card';
+
+        var head = document.createElement('div');
+        head.className = 'cheat-card__head';
+
+        var title = document.createElement('h3');
+        title.className = 'cheat-card__q';
+        title.appendChild(highlight(question.q, words));
+        head.appendChild(title);
+
+        var tags = document.createElement('div');
+        tags.className = 'cheat-card__tags';
+        if (question.c.length > 1) {
+            var multi = document.createElement('span');
+            multi.className = 'cheat-tag';
+            multi.textContent = 'ответов: ' + question.c.length;
+            tags.appendChild(multi);
+        }
+        if (question.v === 2) {
+            var two = document.createElement('span');
+            two.className = 'cheat-tag ok';
+            two.textContent = 'два источника';
+            two.title = 'Ответ совпал в разборе и в файле ответов 2026';
+            tags.appendChild(two);
+        } else if (question.v === 0) {
+            var weak = document.createElement('span');
+            weak.className = 'cheat-tag warn';
+            weak.textContent = 'без источника';
+            weak.title = 'Вопрос из старой базы: ответ ничем не подтверждён';
+            tags.appendChild(weak);
+        }
+        if (tags.childNodes.length) head.appendChild(tags);
+        card.appendChild(head);
+
+        var answers = document.createElement('ul');
+        answers.className = 'cheat-answers';
+        question.c.forEach(function (index) {
+            var li = document.createElement('li');
+            li.appendChild(highlight(question.o[index], words));
+            answers.appendChild(li);
+        });
+        card.appendChild(answers);
+
+        var details = document.createElement('div');
+        details.className = 'cheat-details';
+        details.hidden = true;
+
+        var wrong = question.o
+            .map(function (text, index) { return { text: text, index: index }; })
+            .filter(function (item) { return question.c.indexOf(item.index) === -1; });
+        if (wrong.length) {
+            var otherTitle = document.createElement('div');
+            otherTitle.className = 'cheat-subtitle';
+            otherTitle.textContent = 'Неверные варианты';
+            details.appendChild(otherTitle);
+            var others = document.createElement('ul');
+            others.className = 'cheat-wrong';
+            wrong.forEach(function (item) {
+                var li = document.createElement('li');
+                li.appendChild(highlight(item.text, words));
+                others.appendChild(li);
+            });
+            details.appendChild(others);
+        }
+
+        if (question.note) {
+            var whyTitle = document.createElement('div');
+            whyTitle.className = 'cheat-subtitle';
+            whyTitle.textContent = 'Разбор';
+            details.appendChild(whyTitle);
+            var why = document.createElement('p');
+            why.className = 'cheat-why';
+            why.appendChild(highlight(question.note, words));
+            details.appendChild(why);
+        }
+
+        if (question.img) {
+            var image = document.createElement('img');
+            image.className = 'cheat-image';
+            image.src = question.img;
+            image.alt = question.alt || 'Скриншот к вопросу';
+            image.onclick = function () { openLightbox(image.src, image.alt); };
+            details.appendChild(image);
+        }
+
+        if (question.ref) {
+            var link = document.createElement('a');
+            link.className = 'btn-ref cheat-ref';
+            link.href = question.ref;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = '📚 Справка Яндекса';
+            details.appendChild(link);
+        }
+
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'cheat-toggle';
+        toggle.textContent = question.note ? 'Разбор и остальные варианты ▾'
+                                           : 'Остальные варианты ▾';
+        toggle.onclick = function () {
+            details.hidden = !details.hidden;
+            toggle.textContent = toggle.textContent.replace(
+                details.hidden ? '▴' : '▾', details.hidden ? '▾' : '▴');
+        };
+        if (details.childNodes.length) {
+            card.appendChild(toggle);
+            card.appendChild(details);
+        }
+        return card;
+    }
+
+    function renderCheat() {
+        var words = searchable(cheatQuery).split(/\s+/).filter(Boolean);
+        var hits = cheatSearch(cheatQuery);
+        var list = el('cheat-results');
+        list.innerHTML = '';
+
+        var summary = el('cheat-summary');
+        summary.innerHTML = '';
+        if (!cheatQuery.trim()) {
+            summary.textContent = 'Поиск по всем ' + QUIZZES[quizKey].data.length +
+                ' вопросам: по слову из вопроса, из варианта ответа или из разбора.';
+        } else if (!hits.length) {
+            summary.textContent = 'Ничего не нашлось. Попробуйте одно слово — ' +
+                'формулировки на экзамене меняются.';
+        } else {
+            summary.textContent = 'Найдено: ' + hits.length;
+        }
+
+        // подсказываем, если искомое есть в другом тесте
+        var otherKey = quizKey === 'direct' ? 'metrica' : 'direct';
+        var otherCount = cheatQuery.trim() ? countIn(otherKey, cheatQuery) : 0;
+        if (otherCount) {
+            summary.appendChild(document.createTextNode(' · '));
+            var jump = document.createElement('button');
+            jump.type = 'button';
+            jump.className = 'cheat-jump';
+            jump.textContent = 'в «' + QUIZ_TITLES[otherKey] + '» — ' + otherCount;
+            jump.onclick = function () {
+                el('quiz-selector').value = otherKey;
+                el('quiz-selector').dispatchEvent(new Event('change'));
+            };
+            summary.appendChild(jump);
+        }
+
+        var shown = hits.slice(0, cheatShown);
+        shown.forEach(function (hit) {
+            list.appendChild(cheatCard(hit.question, words));
+        });
+
+        var more = el('cheat-more');
+        if (hits.length > shown.length) {
+            more.hidden = false;
+            more.textContent = 'Показать ещё ' +
+                Math.min(CHEAT_PAGE, hits.length - shown.length) +
+                ' из ' + (hits.length - shown.length);
+        } else {
+            more.hidden = true;
+        }
+        el('cheat-clear').hidden = !cheatQuery;
+    }
+
     // --------------------------------------------------------------- переключение
 
     /**
@@ -553,7 +835,9 @@
 
         el('btn-mode-training').classList.remove('active');
         el('btn-mode-exam').classList.remove('active');
+        el('btn-mode-cheat').classList.remove('active');
         el('quiz-container').hidden = true;
+        el('cheat-container').hidden = true;
         el('results-container').hidden = true;
         el('exam-setup').hidden = true;
         el('exam-info-bar').hidden = true;
@@ -601,6 +885,14 @@
             el('exam-info-bar').hidden = false;
             el('quiz-container').hidden = false;
             renderQuestion();
+        } else if (mode === 'cheat') {
+            document.body.classList.add('mode-cheat');
+            el('btn-mode-cheat').classList.add('active');
+            el('main-title').textContent = 'Шпаргалка';
+            el('cheat-container').hidden = false;
+            cheatShown = CHEAT_PAGE;
+            renderCheat();
+            if (!isMobile()) el('cheat-search').focus();
         } else if (mode === 'exam_review') {
             document.body.classList.add('mode-review');
             el('main-title').textContent = 'Просмотр ошибок';
@@ -997,6 +1289,12 @@
         var tag = (event.target.tagName || '').toLowerCase();
         if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
         if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (event.key === '/' || event.key === '.') {          // «.» — та же клавиша в русской раскладке
+            if (mode !== 'cheat') setMode('cheat');
+            el('cheat-search').focus();
+            event.preventDefault();
+            return;
+        }
         if (el('quiz-container').hidden) return;
 
         if (event.key >= '1' && event.key <= '9') {
@@ -1080,11 +1378,41 @@
             searchQuery = '';
             el('question-search').value = '';
             updateVerifiedFilterVisibility();
+            if (mode === 'cheat') {
+                cheatShown = CHEAT_PAGE;
+                renderCheat();
+                return;
+            }
             setMode(mode === 'exam_setup' ? 'exam_setup' : 'training');
         };
 
         el('btn-mode-training').onclick = function () { setMode('training'); };
         el('btn-mode-exam').onclick = function () { setMode('exam_setup'); };
+        el('btn-mode-cheat').onclick = function () { setMode('cheat'); };
+
+        el('cheat-search').oninput = function () {
+            cheatQuery = this.value;
+            cheatShown = CHEAT_PAGE;
+            renderCheat();
+        };
+        el('cheat-search').onkeydown = function (event) {
+            if (event.key !== 'Escape') return;
+            this.value = '';
+            cheatQuery = '';
+            cheatShown = CHEAT_PAGE;
+            renderCheat();
+        };
+        el('cheat-clear').onclick = function () {
+            el('cheat-search').value = '';
+            cheatQuery = '';
+            cheatShown = CHEAT_PAGE;
+            renderCheat();
+            el('cheat-search').focus();
+        };
+        el('cheat-more').onclick = function () {
+            cheatShown += CHEAT_PAGE;
+            renderCheat();
+        };
         el('btn-force-finish').onclick = function () {
             if (confirm('Вы уверены, что хотите завершить экзамен досрочно? Неотвеченные вопросы будут засчитаны как ошибки.')) {
                 clearInterval(examTimer);

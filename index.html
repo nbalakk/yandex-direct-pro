@@ -53,6 +53,7 @@
     <div class="mode-selector" id="mode-selector">
         <button class="mode-btn active" id="btn-mode-training" type="button">Тренажер</button>
         <button class="mode-btn" id="btn-mode-exam" type="button">Экзамен</button>
+        <button class="mode-btn" id="btn-mode-cheat" type="button">🔎 Шпаргалка</button>
     </div>
 
     <div class="exam-info-bar" id="exam-info-bar" hidden>
@@ -131,6 +132,19 @@
     </div>
 
     <div id="results-container" hidden></div>
+
+    <div id="cheat-container" hidden>
+        <div class="cheat-search-row">
+            <input type="search" class="search-field cheat-search" id="cheat-search"
+                   placeholder="Введите слово из вопроса или варианта ответа…"
+                   autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button class="btn-secondary btn-icon-only" id="cheat-clear" type="button"
+                    title="Очистить" hidden>✕</button>
+        </div>
+        <div class="cheat-summary" id="cheat-summary"></div>
+        <div class="cheat-results" id="cheat-results"></div>
+        <button class="btn-secondary cheat-more" id="cheat-more" type="button" hidden></button>
+    </div>
 </div>
 <div class="lightbox" id="lightbox" hidden>
     <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Закрыть">✕</button>
@@ -140,7 +154,7 @@
 <div class="footer">
     Разработано специально для подготовки к сертификации.<br>
     Идеи по улучшению тренажера: tg <a href="https://t.me/nbalakk" target="_blank" rel="noopener">@nbalakk</a>.<br>
-    © 2026 v.3.0
+    © 2026 v.3.1
 </div>
 
 <!-- Базы вопросов -->
