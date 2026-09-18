@@ -828,8 +828,12 @@
         }
 
         closeLightbox();
+        var changed = mode !== next;
         mode = next;
         setExamGuard(mode === 'exam_active');
+        // на телефоне экран часто прокручен вниз: без этого смена режима
+        // выглядит так, будто кнопка не сработала
+        if (changed && isMobile()) window.scrollTo({ top: 0, behavior: 'smooth' });
         var isLight = document.body.classList.contains('theme-light');
         document.body.className = isLight ? 'theme-light' : '';
 

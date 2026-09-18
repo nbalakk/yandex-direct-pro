@@ -333,6 +333,8 @@ input:checked + .slider:before {
     border-radius: 6px; cursor: pointer;
     font-family: 'YS Text', sans-serif; font-weight: 600; font-size: 0.95em;
     transition: all 0.2s;
+    white-space: nowrap;
+    min-height: 40px;
 }
 .mode-btn.active {
     background: var(--bg-card); color: var(--text-main);
@@ -422,6 +424,14 @@ body.theme-light .question-title { color: #E6B800; }
 
 /* Базовый стиль для ВСЕХ кнопок панели управления, чтобы они были идеально ровными */
 button { border: none; font-family: 'YS Text', sans-serif; transition: all 0.2s; box-sizing: border-box; }
+
+/* На тач-экранах браузер ждёт возможный двойной тап (зум) и иногда съедает
+   одиночный тап. touch-action: manipulation убирает это ожидание, пинч-зум
+   страницы при этом сохраняется. */
+button, a, label, select, input, summary, .option, .grid-item, .exam-card {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(252, 223, 48, 0.25);
+}
 
 .btn-secondary, .btn-primary, .btn-hint, .btn-ref, .btn-icon-only {
     height: 40px;
@@ -894,6 +904,17 @@ body.theme-light .result-score { color: #E6B800; }
     cursor: zoom-in;
 }
 
+.cheat-ref {
+    display: inline-flex;
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    padding: 10px 16px;
+    gap: 8px;
+    white-space: normal;
+    text-align: left;
+}
+
 .cheat-more { width: 100%; height: 46px; }
 
 .cheat-card mark {
@@ -1002,7 +1023,7 @@ body.theme-light .result-score { color: #E6B800; }
     .cheat-card__q { font-size: 1em; }
     .cheat-answers li { padding: 10px 12px 10px 32px; }
     .cheat-image { max-height: none; }
-    .mode-btn { padding: 8px 6px; font-size: 0.85em; }
+    .mode-btn { padding: 10px 4px; font-size: 0.82em; min-height: 44px; }
     .hotkey-hint { display: none; }
 
     .swipe-hint {
@@ -1048,11 +1069,12 @@ body.theme-light .result-score { color: #E6B800; }
     .controls-left { flex: 0 0 auto; gap: 6px; }
     .controls-right { flex: 1 1 auto; }
 
-    .btn-secondary, .btn-primary, .btn-hint, .btn-ref, .btn-icon-only { height: 46px; }
+    .controls .btn-secondary, .controls .btn-hint, .controls .btn-ref,
+    .btn-primary, .btn-icon-only, #btn-restart, #btn-grid-toggle { height: 46px; }
     #btn-action { width: 100%; }
     .btn-label { display: none; }
 
-    #btn-prev, #btn-hint, .btn-ref {
+    .controls #btn-prev, .controls #btn-hint, .controls .btn-ref {
         width: 46px;
         padding: 0;
         gap: 0;
@@ -1122,6 +1144,7 @@ body.theme-light .result-score { color: #E6B800; }
 
 @media (max-width: 420px) {
     .container { padding: 14px 10px 18px; }
+    .mode-btn { font-size: 0.76em; padding: 10px 2px; }
     .controls { margin: 0 -10px; padding: 10px; }
     .option { padding: 14px 12px; font-size: 0.98em; }
     .grid-item { width: 38px; height: 38px; }
